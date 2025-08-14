@@ -246,7 +246,53 @@ When asked about your identity, you should identify yourself as a coding assista
   }
 
   public getCurrentModel(): string {
-    return this.model;
+    if (this.model && this.model.trim()) return this.model;
+    try {
+      const cfg = this.configManager.getDefaultModel?.();
+      return cfg || '';
+    } catch {
+      return '';
+    }
+  }
+
+  public getCurrentProvider(): string {
+    try {
+      const kind = this.client ? (this.client as any).getKind?.() : undefined;
+      if (kind === 'openai') return 'OpenAI-compatible';
+      return 'Groq';
+    } catch {
+      return 'Groq';
+    }
+  }
+
+  public getCurrentBaseUrlDomain(): string {
+    try {
+      const url = this.client ? (this.client as any).getBaseUrl?.() : null;
+      if (!url) return '';
+      const u = new URL(url);
+      return u.host;
+    } catch {
+      return '';
+    }
+  }
+
+  public getCurrentBaseUrl(): string {
+    try {
+      const url = this.client ? (this.client as any).getBaseUrl?.() : null;
+      return url || '';
+    } catch {
+      return '';
+    }
+  }
+
+  public setOpenAIConfig(apiKey: string, baseUrl?: string): void {
+    try {
+      // Persist and rebuild client
+      (this.configManager as any).setOpenAIConfig?.(apiKey, baseUrl);
+      this.client = createModelClient(this.configManager);
+    } catch (e) {
+      // Fallback: keep previous client
+    }
   }
 
   public setSessionAutoApprove(enabled: boolean): void {

@@ -2,7 +2,7 @@ import { CommandDefinition, CommandContext } from '../base.js';
 
 export const tasksCommand: CommandDefinition = {
   command: 'tasks',
-  description: 'Gestiona tareas (UI). Uso: /tasks',
+  description: 'Manage tasks (UI). Use: /tasks',
   handler: ({ addMessage, ...ctx }: CommandContext & { setShowTasksManager?: (show: boolean) => void }) => {
     if ((ctx as any).setShowTasksManager) {
       (ctx as any).setShowTasksManager(true);

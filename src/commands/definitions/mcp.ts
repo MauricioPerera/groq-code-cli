@@ -3,7 +3,7 @@ import { McpManager } from '../../utils/mcp.js';
 
 export const mcpCommand: CommandDefinition = {
   command: 'mcp',
-  description: 'Gestiona servidores MCP (UI). Uso: /mcp',
+  description: 'Manage MCP servers (UI). Use: /mcp',
   handler: async (context: any) => {
     if (context.setShowMcpManager) {
       context.setShowMcpManager(true);

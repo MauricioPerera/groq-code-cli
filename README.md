@@ -1,10 +1,10 @@
 <p align="right"><a href="README_ES.md"><img alt="Español" src="https://img.shields.io/badge/lang-ES-yellow"></a></p>
 <h2 align="center">
  <br>
- <img src="docs/thumbnail.png" alt="Groq Code CLI" width="400">
+ <img src="docs/thumbnail.png" alt="Nexus Code CLI" width="400">
  <br>
  <br>
- Groq Code CLI: A highly customizable, lightweight, and open-source coding CLI powered by Groq for instant iteration.
+ Nexus Code CLI: A highly customizable, lightweight, and open-source coding CLI powered by Groq/OpenAI-compatible for instant iteration.
  <br>
 </h2>
 
@@ -50,7 +50,7 @@ git clone https://github.com/build-with-groq/groq-code-cli.git
 cd groq-code-cli
 npm install
 npm run build
-npm link        # Enables the `groq` command in any directory
+ npm link        # Enables the `nexus` command in any directory
 ```
 
 ```bash
@@ -61,24 +61,24 @@ npm run dev
 ### Run Instantly
 ```bash
 # Using npx, no installation required
-npx groq-code-cli@latest
+ npx nexus-code-cli@latest
 ```
 
 ### Install Globally
 ```bash
-npm install -g groq-code-cli@latest
+ npm install -g nexus-code-cli@latest
 ```
 
 ## Usage
 ```bash
 # Start chat session
-groq
+nexus
 ```
 
 ### Command Line Options
 
 ```bash
-groq [options]
+nexus [options]
 
 Options:
   -t, --temperature <temp>      Temperature for generation (default: 1)

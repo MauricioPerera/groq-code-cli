@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { createTasks, updateTasks, saveTasks, loadTasks } from '../../../tools/tools.js';
+import { t } from '../../../utils/i18n.js';
 
 type Task = { id: string; description: string; status: 'pending'|'in_progress'|'completed'; notes?: string };
 
@@ -74,31 +75,31 @@ export default function TasksManager({ onClose }: TasksManagerProps) {
 
   return (
     <Box flexDirection="column">
-      <Box marginBottom={1}><Text color="cyan" bold>Tareas</Text></Box>
+      <Box marginBottom={1}><Text color="cyan" bold>{t('tasks.title')}</Text></Box>
       {mode === 'list' ? (
         <>
-          {tasks.length === 0 ? <Text color="gray">(sin tareas)</Text> : tasks.map((t,i)=> (
+          {tasks.length === 0 ? <Text color="gray">{t('tasks.empty')}</Text> : tasks.map((t,i)=> (
             <Box key={t.id}>
               <Text color={i===cursor?'green':undefined}>{i===cursor?'❯ ':'  '}</Text>
               <Text>[{t.status==='completed'?'x':' '}] {t.id}. {t.description}</Text>
             </Box>
           ))}
-          <Box marginTop={1}><Text color="gray">a: añadir, espacio: toggle completado, s: guardar, l: cargar, Esc: salir</Text></Box>
+          <Box marginTop={1}><Text color="gray">{t('tasks.hint')}</Text></Box>
         </>
       ) : null}
       {mode === 'add' ? (
         <>
-          <Text>Descripción: {input}</Text>
+          <Text>{t('tasks.add.label')} {input}</Text>
         </>
       ) : null}
       {mode === 'save' ? (
         <>
-          <Text>Ruta archivo (default .nexus/tasks/tasks.json): {input}</Text>
+          <Text>{t('tasks.save.label')} {input}</Text>
         </>
       ) : null}
       {mode === 'load' ? (
         <>
-          <Text>Ruta archivo (default .nexus/tasks/tasks.json): {input}</Text>
+          <Text>{t('tasks.load.label')} {input}</Text>
         </>
       ) : null}
     </Box>

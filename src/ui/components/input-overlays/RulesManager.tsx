@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { loadProjectRules } from '../../../utils/nexus-rules.js';
+import { t } from '../../../utils/i18n.js';
 
 interface RulesManagerProps {
   onAttach: (name: string) => void;
@@ -27,9 +28,9 @@ export default function RulesManager({ onAttach, onCancel }: RulesManagerProps) 
 
   return (
     <Box flexDirection="column" marginBottom={1}>
-      <Box marginBottom={1}><Text color="cyan" bold>Reglas Nexus</Text></Box>
+      <Box marginBottom={1}><Text color="cyan" bold>{t('rulesManager.title')}</Text></Box>
       {rules.length === 0 ? (
-        <Text color="gray">No hay reglas en .nexus/rules</Text>
+        <Text color="gray">{t('rulesManager.empty')}</Text>
       ) : (
         rules.map((r, i) => (
           <Box key={r.name}>
@@ -40,7 +41,7 @@ export default function RulesManager({ onAttach, onCancel }: RulesManagerProps) 
           </Box>
         ))
       )}
-      <Box marginTop={1}><Text color="gray">↑/↓ navegar, Enter adjuntar, Esc cancelar</Text></Box>
+      <Box marginTop={1}><Text color="gray">{t('rulesManager.hint')}</Text></Box>
     </Box>
   );
 }

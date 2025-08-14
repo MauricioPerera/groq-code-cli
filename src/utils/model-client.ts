@@ -45,6 +45,8 @@ export class ModelClient {
 
   public getKind(): ProviderKind { return this.kind; }
 
+  public getBaseUrl(): string | null { return this.baseUrl; }
+
   async createChatCompletion(req: ChatRequest, abortSignal?: AbortSignal): Promise<ChatResponse> {
     if (this.kind === 'groq') {
       if (!this.groq) throw new Error('Groq client not initialized');

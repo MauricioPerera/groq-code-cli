@@ -1,11 +1,12 @@
 {
-  "name": "groq-code-cli",
+  "name": "nexus-code-cli",
   "version": "1.0.2",
   "license": "MIT",
   "bin": {
-    "groq": "dist/core/cli.js"
+    "nexus": "dist/core/cli.js"
   },
   "type": "module",
+  "preferGlobal": true,
   "engines": {
     "node": ">=16"
   },

@@ -9,11 +9,13 @@ export interface CommandContext {
   setShowMcpManager?: (show: boolean) => void;
   toggleReasoning?: () => void;
   showReasoning?: boolean;
+  setLanguage?: (lang: 'es' | 'en') => void;
 }
 
 export interface CommandDefinition {
   command: string;
   description: string;
+  descriptionKey?: string;
   handler: (context: CommandContext) => void;
 }
 

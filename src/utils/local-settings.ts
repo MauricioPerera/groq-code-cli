@@ -7,6 +7,7 @@ interface Config {
   defaultModel?: string;
   openaiApiKey?: string;
   openaiBaseUrl?: string;
+  language?: 'en' | 'es';
 }
 
 const CONFIG_DIR = '.groq'; // In home directory
@@ -89,6 +90,34 @@ export class ConfigManager {
       fs.writeFileSync(this.configPath, JSON.stringify(config, null, 2), { mode: 0o600 });
     } catch (error) {
       throw new Error(`Failed to save OpenAI config: ${error}`);
+    }
+  }
+
+  public getLanguage(): 'en' | 'es' {
+    try {
+      if (!fs.existsSync(this.configPath)) {
+        return 'es';
+      }
+      const configData = fs.readFileSync(this.configPath, 'utf8');
+      const config: Config = JSON.parse(configData);
+      return (config.language as any) === 'en' ? 'en' : 'es';
+    } catch {
+      return 'es';
+    }
+  }
+
+  public setLanguage(lang: 'en' | 'es'): void {
+    try {
+      this.ensureConfigDir();
+      let config: Config = {} as any;
+      if (fs.existsSync(this.configPath)) {
+        const configData = fs.readFileSync(this.configPath, 'utf8');
+        config = JSON.parse(configData);
+      }
+      config.language = lang;
+      fs.writeFileSync(this.configPath, JSON.stringify(config, null, 2), { mode: 0o600 });
+    } catch (error) {
+      throw new Error(`Failed to save language: ${error}`);
     }
   }
 

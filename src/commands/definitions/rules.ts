@@ -15,8 +15,8 @@ function listMdc(baseDir: string): string[] {
 }
 
 export const rulesCommand: CommandDefinition = {
-	command: 'rules',
-	description: 'Gestiona reglas Nexus (UI). Uso: /rules',
+    command: 'rules',
+    description: 'Manage Nexus rules (UI). Use: /rules',
 	handler: ({ addMessage, ...ctx }: CommandContext & { setShowRulesManager?: (show: boolean) => void }) => {
 		if ((ctx as any).setShowRulesManager) {
 			(ctx as any).setShowRulesManager(true);

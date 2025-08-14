@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { loadAgentProfiles } from '../../../utils/nexus-agents.js';
+import { t } from '../../../utils/i18n.js';
 
 interface AgentManagerProps {
   onActivate: (name: string) => void;
@@ -37,9 +38,9 @@ export default function AgentManager({ onActivate, onCancel }: AgentManagerProps
 
   return (
     <Box flexDirection="column" marginBottom={1}>
-      <Box marginBottom={1}><Text color="cyan" bold>Agentes Nexus</Text></Box>
+      <Box marginBottom={1}><Text color="cyan" bold>{t('agentManager.title')}</Text></Box>
       {agents.length === 0 ? (
-        <Text color="gray">No hay agentes en .nexus/agents</Text>
+        <Text color="gray">{t('agentManager.empty')}</Text>
       ) : (
         agents.map((a, i) => (
           <Box key={a.name}>
@@ -49,7 +50,7 @@ export default function AgentManager({ onActivate, onCancel }: AgentManagerProps
           </Box>
         ))
       )}
-      <Box marginTop={1}><Text color="gray">↑/↓ para navegar, Enter para activar, Esc para cancelar</Text></Box>
+      <Box marginTop={1}><Text color="gray">{t('agentManager.hint')}</Text></Box>
     </Box>
   );
 }

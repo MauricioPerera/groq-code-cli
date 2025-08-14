@@ -11,6 +11,7 @@ import Login from '../input-overlays/Login.js';
 import ModelSelector from '../input-overlays/ModelSelector.js';
 import MaxIterationsContinue from '../input-overlays/MaxIterationsContinue.js';
 import { handleSlashCommand } from '../../../commands/index.js';
+import { t } from '../../../utils/i18n.js';
 import AgentManager from '../input-overlays/AgentManager.js';
 import RulesManager from '../input-overlays/RulesManager.js';
 import TasksManager from '../input-overlays/TasksManager.js';
@@ -74,6 +75,7 @@ export default function Chat({ agent }: ChatProps) {
   const [showRulesManager, setShowRulesManager] = useState(false);
   const [showTasksManager, setShowTasksManager] = useState(false);
   const [showMcpManager, setShowMcpManager] = useState(false);
+  const [language, setLanguage] = useState<'es'|'en'>(() => new ConfigManager().getLanguage());
 
   // Handle global keyboard shortcuts
   useInput((input, key) => {
@@ -122,6 +124,8 @@ export default function Chat({ agent }: ChatProps) {
           setShowMcpManager,
           toggleReasoning,
           showReasoning,
+          agent,
+          setLanguage,
         };
         // helper to allow commands to read last user input
         (ctx.addMessage as any).lastUserInput = () => message;
@@ -144,6 +148,8 @@ export default function Chat({ agent }: ChatProps) {
     // Persist choice: if baseUrl is provided, treat as OpenAI-compatible
     if (baseUrl && baseUrl.trim()) {
       cfg.setOpenAIConfig(apiKey, baseUrl.trim());
+      // Reconfigurar agente inmediatamente para reflejar proveedor/base URL en el footer
+      (agent as any).setOpenAIConfig?.(apiKey, baseUrl.trim());
     } else {
       agent.saveApiKey(apiKey);
     }
@@ -263,7 +269,7 @@ export default function Chat({ agent }: ChatProps) {
           />
         ) : (
           <Box>
-            <Text color="gray" dimColor>Processing...</Text>
+            <Text color="gray" dimColor>{t('footer.processing')}</Text>
           </Box>
         )}
       </Box>
@@ -275,8 +281,8 @@ export default function Chat({ agent }: ChatProps) {
           </Text>
         </Box>
         <Box>
-          <Text color="gray" dimColor>
-            {agent.getCurrentModel?.() || ''}
+          <Text color="#32CD32" bold>
+            {(agent.getCurrentBaseUrlDomain?.() || '').trim()} {agent.getCurrentBaseUrlDomain?.() ? '· ' : ''}{(agent.getCurrentModel?.() || '').trim()}
           </Text>
         </Box>
       </Box>
