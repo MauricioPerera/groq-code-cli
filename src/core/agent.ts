@@ -4,6 +4,7 @@ import { validateReadBeforeEdit, getReadBeforeEditError } from '../tools/validat
 import { ALL_TOOL_SCHEMAS, DANGEROUS_TOOLS, APPROVAL_REQUIRED_TOOLS, ToolSchema } from '../tools/tool-schemas.js';
 import { McpManager } from '../utils/mcp.js';
 import { ConfigManager } from '../utils/local-settings.js';
+import { ModelClient, createModelClient } from '../utils/model-client.js';
 import fs from 'fs';
 import path from 'path';
 import { loadProjectRules, findManualRulesByRefs, getAutoAttachRules } from '../utils/nexus-rules.js';
@@ -17,7 +18,7 @@ interface Message {
 }
 
 export class Agent {
-  private client: Groq | null = null;
+  private client: ModelClient | null = null;
   private messages: Message[] = [];
   private apiKey: string | null = null;
   private model: string;
@@ -209,7 +210,8 @@ When asked about your identity, you should identify yourself as a coding assista
     debugLog('Setting API key in agent...');
     debugLog('API key provided:', apiKey ? `${apiKey.substring(0, 8)}...` : 'empty');
     this.apiKey = apiKey;
-    this.client = new Groq({ apiKey });
+    // Keep backwards compatibility: if OPENAI_API_KEY is present, model-client will route to OpenAI-compatible endpoint
+    this.client = createModelClient(this.configManager);
     debugLog('Groq client initialized with provided API key');
   }
 
@@ -273,7 +275,7 @@ When asked about your identity, you should identify yourself as a coding assista
 
     // Check API key on first message send
     if (!this.client) {
-      debugLog('Initializing Groq client...');
+      debugLog('Initializing model client...');
       // Try environment variable first
       const envApiKey = process.env.GROQ_API_KEY;
       if (envApiKey) {
@@ -285,13 +287,13 @@ When asked about your identity, you should identify yourself as a coding assista
         const configApiKey = this.configManager.getApiKey();
         if (configApiKey) {
           debugLog('Using API key from config file');
-          this.setApiKey(configApiKey);
+           this.setApiKey(configApiKey);
         } else {
           debugLog('No API key found anywhere');
           throw new Error('No API key available. Please use /login to set your Groq API key.');
         }
       }
-      debugLog('Groq client initialized successfully');
+      debugLog('Model client initialized successfully');
     }
 
     // Apply @manual rule refs and clean input
@@ -353,7 +355,7 @@ When asked about your identity, you should identify yourself as a coding assista
           // Create AbortController for this request
           this.currentAbortController = new AbortController();
 
-          const response = await this.client.chat.completions.create({
+          const response = await this.client.createChatCompletion({
             model: this.model,
             messages: this.messages as any,
             tools: this.getAllToolsForModel(),
@@ -361,9 +363,7 @@ When asked about your identity, you should identify yourself as a coding assista
             temperature: this.temperature,
             max_tokens: 8000,
             stream: false
-          }, {
-            signal: this.currentAbortController.signal
-          });
+          }, this.currentAbortController.signal);
 
           debugLog('Full API response received:', response);
           debugLog('Response usage:', response.usage);

@@ -116,6 +116,18 @@ export GROQ_API_KEY=your_api_key_here
 - `/reasoning` - Toggle display of reasoning content in messages
 - `/mcp` - Manage MCP servers and inspect discovered tools
 
+### OpenAI-compatible providers
+
+Set environment variables to use an OpenAI-compatible endpoint instead of Groq:
+
+```bash
+export OPENAI_API_KEY=sk-...
+# Optional custom base URL (defaults to https://api.openai.com/v1)
+export OPENAI_BASE_URL=https://api.openai.com/v1
+```
+
+Precedence: if `OPENAI_API_KEY` is set, the CLI will use the OpenAI-compatible API. Otherwise it falls back to `GROQ_API_KEY` (or `/login`).
+
 
 ## Development
 

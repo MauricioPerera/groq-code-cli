@@ -2,17 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { Box, Text, useInput } from 'ink';
 
 interface LoginProps {
-  onSubmit: (apiKey: string) => void;
+  onSubmit: (apiKey: string, baseUrl?: string) => void;
   onCancel: () => void;
 }
 
 export default function Login({ onSubmit, onCancel }: LoginProps) {
   const [apiKey, setApiKey] = useState('');
+  const [baseUrl, setBaseUrl] = useState('');
 
   useInput((input, key) => {
     if (key.return) {
       if (apiKey.trim()) {
-        onSubmit(apiKey.trim());
+        onSubmit(apiKey.trim(), baseUrl.trim() || undefined);
       }
       return;
     }
@@ -23,7 +24,8 @@ export default function Login({ onSubmit, onCancel }: LoginProps) {
     }
 
     if (key.backspace || key.delete) {
-      setApiKey(prev => prev.slice(0, -1));
+      if (baseUrl.length > 0) setBaseUrl(prev => prev.slice(0, -1));
+      else setApiKey(prev => prev.slice(0, -1));
       return;
     }
 
@@ -34,7 +36,11 @@ export default function Login({ onSubmit, onCancel }: LoginProps) {
 
     // Regular character input
     if (input && !key.meta && !key.ctrl) {
-      setApiKey(prev => prev + input);
+      if (apiKey.length === 0 || baseUrl.length > 0) {
+        setBaseUrl(prev => prev + input);
+      } else {
+        setApiKey(prev => prev + input);
+      }
     }
   });
 
@@ -43,11 +49,9 @@ export default function Login({ onSubmit, onCancel }: LoginProps) {
       <Box marginBottom={1}>
         <Text color="cyan" bold>Login with Groq API Key</Text>
       </Box>
-      
+
       <Box marginBottom={1}>
-        <Text color="gray">
-          Enter your Groq API key to continue. You can get one from <Text underline>https://console.groq.com/keys</Text>
-        </Text>
+        <Text color="gray">Enter your API key. To use OpenAI-compatible providers, set Base URL and API key.</Text>
       </Box>
 
       <Box>
@@ -57,6 +61,10 @@ export default function Login({ onSubmit, onCancel }: LoginProps) {
           {apiKey.length > 20 && '...'}
         </Text>
         <Text backgroundColor="cyan" color="cyan">▌</Text>
+      </Box>
+      <Box>
+        <Text color="cyan">Base URL (optional): </Text>
+        <Text>{baseUrl || ''}</Text>
       </Box>
     </Box>
   );

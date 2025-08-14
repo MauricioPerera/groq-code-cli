@@ -5,6 +5,8 @@ import * as os from 'os';
 interface Config {
   groqApiKey?: string;
   defaultModel?: string;
+  openaiApiKey?: string;
+  openaiBaseUrl?: string;
 }
 
 const CONFIG_DIR = '.groq'; // In home directory
@@ -40,6 +42,20 @@ export class ConfigManager {
     }
   }
 
+  public getOpenAIConfig(): { apiKey?: string; baseUrl?: string } {
+    try {
+      if (!fs.existsSync(this.configPath)) {
+        return {};
+      }
+      const configData = fs.readFileSync(this.configPath, 'utf8');
+      const config: Config = JSON.parse(configData);
+      return { apiKey: config.openaiApiKey, baseUrl: config.openaiBaseUrl };
+    } catch (error) {
+      console.warn('Failed to read OpenAI config:', error);
+      return {};
+    }
+  }
+
   public setApiKey(apiKey: string): void {
     try {
       this.ensureConfigDir();
@@ -57,6 +73,22 @@ export class ConfigManager {
       });
     } catch (error) {
       throw new Error(`Failed to save API key: ${error}`);
+    }
+  }
+
+  public setOpenAIConfig(apiKey: string, baseUrl?: string): void {
+    try {
+      this.ensureConfigDir();
+      let config: Config = {};
+      if (fs.existsSync(this.configPath)) {
+        const configData = fs.readFileSync(this.configPath, 'utf8');
+        config = JSON.parse(configData);
+      }
+      config.openaiApiKey = apiKey;
+      if (baseUrl) config.openaiBaseUrl = baseUrl;
+      fs.writeFileSync(this.configPath, JSON.stringify(config, null, 2), { mode: 0o600 });
+    } catch (error) {
+      throw new Error(`Failed to save OpenAI config: ${error}`);
     }
   }
 

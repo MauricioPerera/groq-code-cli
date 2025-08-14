@@ -11,6 +11,7 @@ import Login from '../input-overlays/Login.js';
 import ModelSelector from '../input-overlays/ModelSelector.js';
 import MaxIterationsContinue from '../input-overlays/MaxIterationsContinue.js';
 import { handleSlashCommand } from '../../../commands/index.js';
+import { ConfigManager } from '../../../utils/local-settings.js';
 
 interface ChatProps {
   agent: Agent;
@@ -28,12 +29,11 @@ export default function Chat({ agent }: ChatProps) {
     addApiTokens,
     pauseMetrics,
     resumeMetrics,
-    completeRequest,
-    resetMetrics,
+    completeRequest
   } = useTokenMetrics();
 
   const agentHook = useAgent(
-    agent, 
+    agent,
     startRequest,      // Start tracking on new request
     addApiTokens,      // Add API usage tokens throughout the request
     pauseMetrics,      // Pause during approval
@@ -100,7 +100,7 @@ export default function Chat({ agent }: ChatProps) {
   const handleSendMessage = async (message: string) => {
     if (message.trim() && !isProcessing) {
       setInputValue('');
-      
+
       // Handle slash commands
       if (message.startsWith('/')) {
         handleSlashCommand(message, {
@@ -113,7 +113,7 @@ export default function Chat({ agent }: ChatProps) {
         });
         return;
       }
-      
+
       // The agent will handle starting request tracking
       await sendMessage(message);
     }
@@ -123,13 +123,18 @@ export default function Chat({ agent }: ChatProps) {
     approveToolExecution(approved, autoApproveSession);
   };
 
-  const handleLogin = (apiKey: string) => {
+  const handleLogin = (apiKey: string, baseUrl?: string) => {
     setShowLogin(false);
-    // Save the API key persistently
-    agent.saveApiKey(apiKey);
+    const cfg = new ConfigManager();
+    // Persist choice: if baseUrl is provided, treat as OpenAI-compatible
+    if (baseUrl && baseUrl.trim()) {
+      cfg.setOpenAIConfig(apiKey, baseUrl.trim());
+    } else {
+      agent.saveApiKey(apiKey);
+    }
     addMessage({
       role: 'system',
-      content: 'API key saved successfully. You can now start chatting with the assistant.',
+      content: 'Credentials saved. You can now start chatting with the assistant.',
     });
   };
 
