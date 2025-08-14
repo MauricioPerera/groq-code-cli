@@ -115,6 +115,7 @@ export GROQ_API_KEY=your_api_key_here
 - `/clear` - Clear chat history and context
 - `/reasoning` - Toggle display of reasoning content in messages
 - `/mcp` - Manage MCP servers and inspect discovered tools
+- `/tasks` - Manage tasks in a simple UI overlay
 
 ### OpenAI-compatible providers
 
@@ -186,6 +187,12 @@ groq-code-cli/
 **TL;DR:** Start with `src/core/cli.ts` (main entry point), `src/core/agent.ts`, and `src/ui/hooks/useAgent.ts` (bridge between TUI and the agent). Tools are in `src/tools/`, slash commands are in `src/commands/definitions/`, and customize the TUI in `src/ui/components/`.
 
 ### MCP Quickstart
+### UI Overlays (Agentes, Reglas, Tareas, MCP)
+
+- `/agent`: abre el gestor de agentes (lista y activa perfiles de `.nexus/agents`).
+- `/rules`: abre el gestor de reglas (lista y adjunta reglas de `.nexus/rules`).
+- `/tasks`: abre el gestor de tareas (crear, marcar completado, guardar/cargar).
+- `/mcp`: abre el gestor MCP (servidores y tools descubiertas).
 
 Create `.nexus/mcp.servers.json`:
 

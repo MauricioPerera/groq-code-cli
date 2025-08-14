@@ -11,6 +11,10 @@ import Login from '../input-overlays/Login.js';
 import ModelSelector from '../input-overlays/ModelSelector.js';
 import MaxIterationsContinue from '../input-overlays/MaxIterationsContinue.js';
 import { handleSlashCommand } from '../../../commands/index.js';
+import AgentManager from '../input-overlays/AgentManager.js';
+import RulesManager from '../input-overlays/RulesManager.js';
+import TasksManager from '../input-overlays/TasksManager.js';
+import McpManagerOverlay from '../input-overlays/McpManager.js';
 import { ConfigManager } from '../../../utils/local-settings.js';
 
 interface ChatProps {
@@ -66,6 +70,10 @@ export default function Chat({ agent }: ChatProps) {
   const [showInput, setShowInput] = useState(true);
   const [showLogin, setShowLogin] = useState(false);
   const [showModelSelector, setShowModelSelector] = useState(false);
+  const [showAgentManager, setShowAgentManager] = useState(false);
+  const [showRulesManager, setShowRulesManager] = useState(false);
+  const [showTasksManager, setShowTasksManager] = useState(false);
+  const [showMcpManager, setShowMcpManager] = useState(false);
 
   // Handle global keyboard shortcuts
   useInput((input, key) => {
@@ -93,8 +101,8 @@ export default function Chat({ agent }: ChatProps) {
 
   // Hide input when processing, waiting for approval, or showing login/model selector
   useEffect(() => {
-    setShowInput(!isProcessing && !pendingApproval && !showLogin && !showModelSelector);
-  }, [isProcessing, pendingApproval, showLogin, showModelSelector]);
+    setShowInput(!isProcessing && !pendingApproval && !showLogin && !showModelSelector && !showAgentManager && !showRulesManager && !showTasksManager && !showMcpManager);
+  }, [isProcessing, pendingApproval, showLogin, showModelSelector, showAgentManager, showRulesManager, showTasksManager, showMcpManager]);
 
 
   const handleSendMessage = async (message: string) => {
@@ -108,9 +116,13 @@ export default function Chat({ agent }: ChatProps) {
           clearHistory,
           setShowLogin,
           setShowModelSelector,
+          setShowAgentManager,
+          setShowRulesManager,
+          setShowTasksManager,
+          setShowMcpManager,
           toggleReasoning,
           showReasoning,
-        });
+        } as any);
         return;
       }
 
@@ -210,6 +222,34 @@ export default function Chat({ agent }: ChatProps) {
             onCancel={handleModelCancel}
             currentModel={agent.getCurrentModel?.() || undefined}
           />
+        ) : showAgentManager ? (
+          <AgentManager
+            onActivate={(name: string) => {
+              setShowAgentManager(false);
+              agent.setActiveAgentProfile(name);
+              addMessage({ role: 'system', content: `Agente activo: ${name}` });
+            }}
+            onCancel={() => {
+              setShowAgentManager(false);
+              addMessage({ role: 'system', content: 'Gestor de agentes cancelado.' });
+            }}
+          />
+        ) : showRulesManager ? (
+          <RulesManager
+            onAttach={(name: string) => {
+              setShowRulesManager(false);
+              const ok = (agent as any).attachRule?.(name);
+              addMessage({ role: 'system', content: ok ? `Regla adjuntada: ${name}` : `No se pudo adjuntar la regla: ${name}` });
+            }}
+            onCancel={() => {
+              setShowRulesManager(false);
+              addMessage({ role: 'system', content: 'Gestor de reglas cancelado.' });
+            }}
+          />
+        ) : showTasksManager ? (
+          <TasksManager onClose={() => setShowTasksManager(false)} />
+        ) : showMcpManager ? (
+          <McpManagerOverlay onClose={() => setShowMcpManager(false)} />
         ) : showInput ? (
           <MessageInput
             value={inputValue}

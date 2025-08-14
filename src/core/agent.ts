@@ -708,6 +708,18 @@ When asked about your identity, you should identify yourself as a coding assista
     // Merge static tools with dynamic MCP tools
     return [...ALL_TOOL_SCHEMAS, ...this.dynamicMcpTools];
   }
+
+  public attachRule(ruleName: string): boolean {
+    try {
+      if (!this.projectRules || this.projectRules.length === 0) return false;
+      const rule = this.projectRules.find(r => r.name === ruleName || r.name + '.mdc' === ruleName);
+      if (!rule) return false;
+      this.messages.push({ role: 'system', content: rule.content });
+      return true;
+    } catch {
+      return false;
+    }
+  }
 }
 
 

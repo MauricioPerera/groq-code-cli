@@ -3,6 +3,10 @@ export interface CommandContext {
   clearHistory: () => void;
   setShowLogin: (show: boolean) => void;
   setShowModelSelector?: (show: boolean) => void;
+  setShowAgentManager?: (show: boolean) => void;
+  setShowRulesManager?: (show: boolean) => void;
+  setShowTasksManager?: (show: boolean) => void;
+  setShowMcpManager?: (show: boolean) => void;
   toggleReasoning?: () => void;
   showReasoning?: boolean;
 }

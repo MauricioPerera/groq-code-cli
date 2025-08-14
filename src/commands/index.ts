@@ -7,6 +7,7 @@ import { reasoningCommand } from './definitions/reasoning.js';
 import { agentCommand } from './definitions/agent.js';
 import { rulesCommand } from './definitions/rules.js';
 import { mcpCommand } from './definitions/mcp.js';
+import { tasksCommand } from './definitions/tasks.js';
 
 const availableCommands: CommandDefinition[] = [
   helpCommand,
@@ -17,6 +18,7 @@ const availableCommands: CommandDefinition[] = [
   agentCommand,
   rulesCommand,
   mcpCommand,
+  tasksCommand,
 ];
 
 export function getAvailableCommands(): CommandDefinition[] {

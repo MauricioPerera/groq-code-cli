@@ -3,8 +3,12 @@ import { McpManager } from '../../utils/mcp.js';
 
 export const mcpCommand: CommandDefinition = {
   command: 'mcp',
-  description: 'Gestiona servidores MCP: lista, conecta y muestra tools disponibles',
-  handler: async (context) => {
+  description: 'Gestiona servidores MCP (UI). Uso: /mcp',
+  handler: async (context: any) => {
+    if (context.setShowMcpManager) {
+      context.setShowMcpManager(true);
+      return;
+    }
     // El texto completo del comando llega como mensaje de usuario previo, recuperable vía addMessage side effects.
     // Aquí no tenemos acceso directo, así que inferimos desde la última inserción no es posible; aceptamos subcomando por defecto.
     // Ofrecemos UX simple: por defecto lista, y si el usuario quiere conectar, que use "/mcp connect <name>".
