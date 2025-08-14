@@ -168,6 +168,39 @@ export const EXECUTE_COMMAND_SCHEMA: ToolSchema = {
   }
 };
 
+// MCP Tools
+export const MCP_CONNECT_SCHEMA: ToolSchema = {
+  type: 'function',
+  function: {
+    name: 'mcp_connect',
+    description: 'Connect to a configured MCP server by name (defined in .nexus/mcp.servers.json).',
+    parameters: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'Configured server name' }
+      },
+      required: ['name']
+    }
+  }
+};
+
+export const MCP_REQUEST_SCHEMA: ToolSchema = {
+  type: 'function',
+  function: {
+    name: 'mcp_request',
+    description: 'Send a JSON-RPC request to an MCP server. Ensure connection exists (mcp_connect).',
+    parameters: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'Server name' },
+        method: { type: 'string', description: 'JSON-RPC method' },
+        params: { type: 'object', description: 'Parameters object' }
+      },
+      required: ['name', 'method']
+    }
+  }
+};
+
 // Information Tools
 
 export const SEARCH_FILES_SCHEMA: ToolSchema = {
@@ -359,6 +392,48 @@ export const UPDATE_TASKS_SCHEMA: ToolSchema = {
   }
 };
 
+// Persistent Task Tools
+export const SAVE_TASKS_SCHEMA: ToolSchema = {
+  type: 'function',
+  function: {
+    name: 'save_tasks',
+    description: 'Persist current task list to a file so it can be recovered later. Defaults to .nexus/tasks (tasks.json). Example: {"file_path": "tasks.json", "format": "json"}',
+    parameters: {
+      type: 'object',
+      properties: {
+        file_path: {
+          type: 'string',
+          description: 'Destination file path (relative to project). Recommended: "tasks.json"'
+        },
+        format: {
+          type: 'string',
+          enum: ['json', 'md'],
+          description: 'Output format: json (structured) or md (markdown checklist)'
+        }
+      },
+      required: []
+    }
+  }
+};
+
+export const LOAD_TASKS_SCHEMA: ToolSchema = {
+  type: 'function',
+  function: {
+    name: 'load_tasks',
+    description: 'Load a previously saved task list from file and set it as the active task list. Defaults to .nexus/tasks/tasks.json if not provided. Example: {"file_path": "tasks.json"}',
+    parameters: {
+      type: 'object',
+      properties: {
+        file_path: {
+          type: 'string',
+          description: 'Source file path (relative to project) that contains a previously saved task list'
+        }
+      },
+      required: []
+    }
+  }
+};
+
 // All tools combined
 export const ALL_TOOL_SCHEMAS = [
   READ_FILE_SCHEMA,
@@ -369,6 +444,10 @@ export const ALL_TOOL_SCHEMAS = [
   LIST_FILES_SCHEMA,
   CREATE_TASKS_SCHEMA,
   UPDATE_TASKS_SCHEMA,
+  SAVE_TASKS_SCHEMA,
+  LOAD_TASKS_SCHEMA,
+  MCP_CONNECT_SCHEMA,
+  MCP_REQUEST_SCHEMA,
   EXECUTE_COMMAND_SCHEMA
 ];
 
@@ -378,13 +457,17 @@ export const SAFE_TOOLS = [
   'list_files',
   'search_files',
   'create_tasks',
-  'update_tasks'
+  'update_tasks',
+  'load_tasks',
+  'mcp_request'
 ];
 
 // Tools that require approval, unless auto-approval is enabled
 export const APPROVAL_REQUIRED_TOOLS = [
   'create_file',
   'edit_file',
+  // Writing tasks to disk should be approved by the user
+  'save_tasks',
 ];
 
 // Dangerous tools that always require approval

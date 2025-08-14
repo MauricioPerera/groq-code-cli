@@ -1,0 +1,10 @@
+[
+  {
+    "name": "example",
+    "command": "node",
+    "args": [
+      "./server.js"
+    ],
+    "cwd": "."
+  }
+]

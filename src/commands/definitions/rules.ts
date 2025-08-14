@@ -1,0 +1,43 @@
+import { CommandDefinition, CommandContext } from '../base.js';
+import * as fs from 'fs';
+import * as path from 'path';
+
+function listMdc(baseDir: string): string[] {
+	try {
+		if (!fs.existsSync(baseDir)) return [];
+		const entries = fs.readdirSync(baseDir);
+		return entries
+			.filter(f => f.toLowerCase().endsWith('.mdc'))
+			.map(f => path.basename(f, path.extname(f)));
+	} catch {
+		return [];
+	}
+}
+
+export const rulesCommand: CommandDefinition = {
+	command: 'rules',
+	description: 'List Nexus rules (.nexus/rules) and agent profiles (.nexus/agents) available',
+	handler: ({ addMessage }: CommandContext) => {
+		const rulesDir = path.resolve('.nexus', 'rules');
+		const agentsDir = path.resolve('.nexus', 'agents');
+		const rules = listMdc(rulesDir);
+		const agents = listMdc(agentsDir);
+
+		const lines: string[] = [];
+		lines.push('Nexus Rules:');
+		lines.push(rules.length ? rules.map(r => `- ${r}`).join('\n') : '(none)');
+		lines.push('');
+		lines.push('Agent Profiles:');
+		lines.push(agents.length ? agents.map(a => `- ${a}`).join('\n') : '(none)');
+		lines.push('');
+		lines.push('Tips:');
+		lines.push('- Activate manual rule with @ruleName');
+		lines.push('- Switch agent with @agent:<name>');
+
+		addMessage({
+			role: 'system',
+			content: lines.join('\n')
+		});
+	}
+};
+

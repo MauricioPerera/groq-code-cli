@@ -3,6 +3,8 @@ import * as path from 'path';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { writeFile, createDirectory, displayTree } from '../utils/file-ops.js';
+import { McpManager } from '../utils/mcp.js';
+import { resolveAtProjectRoot } from '../utils/project-root.js';
 import { setReadFilesTracker } from './validators.js';
 
 const execAsync = promisify(exec);
@@ -36,6 +38,16 @@ let currentTaskList: {
   created_at: string;
 } | null = null;
 
+// Helper: access current task list snapshot
+function getCurrentTaskSnapshot() {
+  if (!currentTaskList) return null;
+  return {
+    user_query: currentTaskList.user_query,
+    tasks: currentTaskList.tasks.map(task => ({ ...task })),
+    created_at: currentTaskList.created_at
+  };
+}
+
 // Track which files have been read in the current session
 const readFiles = new Set<string>();
 
@@ -52,7 +64,7 @@ setReadFilesTracker(readFiles);
  */
 export function formatToolParams(toolName: string, toolArgs: Record<string, any>, options: { includePrefix?: boolean; separator?: string } = {}): string {
   const { includePrefix = true, separator = '=' } = options;
-  
+
   const paramMappings: Record<string, string[]> = {
     read_file: ['file_path'],
     create_file: ['file_path'],
@@ -120,7 +132,7 @@ export function createToolResponse(success: boolean, data?: any, message: string
  */
 export async function readFile(filePath: string, startLine?: number, endLine?: number): Promise<ToolResult> {
   try {
-    const resolvedPath = path.resolve(filePath);
+    const resolvedPath = resolveAtProjectRoot(filePath);
 
     // Check if file exists
     try {
@@ -182,7 +194,7 @@ export async function readFile(filePath: string, startLine?: number, endLine?: n
  */
 export async function createFile(filePath: string, content: string, fileType: string = 'file', overwrite: boolean = false): Promise<ToolResult> {
   try {
-    const targetPath = path.resolve(filePath);
+    const targetPath = resolveAtProjectRoot(filePath);
 
     // Check if file exists and handle overwrite
     const exists = await fs.promises.access(targetPath).then(() => true).catch(() => false);
@@ -219,7 +231,7 @@ export async function createFile(filePath: string, content: string, fileType: st
  */
 export async function editFile(filePath: string, oldText: string, newText: string, replaceAll: boolean = false): Promise<ToolResult> {
   try {
-    const resolvedPath = path.resolve(filePath);
+    const resolvedPath = resolveAtProjectRoot(filePath);
 
     // Read current content (validation already confirmed file exists and was read)
     const originalContent = await fs.promises.readFile(resolvedPath, 'utf-8');
@@ -235,7 +247,7 @@ export async function editFile(filePath: string, oldText: string, newText: strin
     // Write the updated content
     const result = await writeFile(filePath, updatedContent, true, true);
     if (result) {
-      const replacementCount = replaceAll ? 
+      const replacementCount = replaceAll ?
         (originalContent.split(oldText).length - 1) : 1;
       return createToolResponse(true, undefined, `Replaced ${replacementCount} occurrence(s) in ${filePath}`);
     } else {
@@ -252,7 +264,7 @@ export async function editFile(filePath: string, oldText: string, newText: strin
  */
 export async function deleteFile(filePath: string, recursive: boolean = false): Promise<ToolResult> {
   try {
-    const targetPath = path.resolve(filePath);
+    const targetPath = resolveAtProjectRoot(filePath);
     const currentWorkingDir = path.resolve(process.cwd());
 
     // Safety check 1: Never delete the root directory itself
@@ -299,7 +311,7 @@ export async function deleteFile(filePath: string, recursive: boolean = false): 
  */
 export async function listFiles(directory: string = '.', pattern: string = '*', recursive: boolean = false, showHidden: boolean = false): Promise<ToolResult> {
   try {
-    const dirPath = path.resolve(directory);
+    const dirPath = resolveAtProjectRoot(directory || '.');
 
     const exists = await fs.promises.access(dirPath).then(() => true).catch(() => false);
     if (!exists) {
@@ -338,7 +350,7 @@ export async function searchFiles(
   groupByFile: boolean = false
 ): Promise<ToolResult> {
   try {
-    const searchDir = path.resolve(directory);
+    const searchDir = resolveAtProjectRoot(directory || '.');
 
     // Check if directory exists
     const exists = await fs.promises.access(searchDir).then(() => true).catch(() => false);
@@ -354,7 +366,7 @@ export async function searchFiles(
     // Default exclusions
     const defaultExcludeDirs = ['.git', 'node_modules', '.next', 'dist', 'build', '.cache'];
     const defaultExcludeFiles = ['*.log', '*.tmp', '*.cache', '*.lock'];
-    
+
     const finalExcludeDirs = [...defaultExcludeDirs, ...(excludeDirs || [])];
     const finalExcludeFiles = [...defaultExcludeFiles, ...(excludeFiles || [])];
 
@@ -410,7 +422,7 @@ export async function searchFiles(
           if (matches.length > 0) {
             const contextStart = Math.max(0, i - contextLines);
             const contextEnd = Math.min(lines.length - 1, i + contextLines);
-            
+
             const contextLinesArray: string[] = [];
             for (let j = contextStart; j <= contextEnd; j++) {
               contextLinesArray.push(lines[j]);
@@ -451,7 +463,7 @@ export async function searchFiles(
       formattedResults = results;
     } else {
       // Flatten results
-      formattedResults = results.flatMap(fileResult => 
+      formattedResults = results.flatMap(fileResult =>
         fileResult.matches.map(match => ({
           filePath: fileResult.filePath,
           lineNumber: match.lineNumber,
@@ -559,13 +571,13 @@ async function collectFiles(
 // Helper function to match glob-like patterns
 function matchesPattern(filename: string, pattern: string): boolean {
   if (pattern === '*') return true;
-  
+
   // Simple glob matching, convert * to .* and ? to .
   const regexPattern = pattern
     .replace(/\./g, '\\.')
     .replace(/\*/g, '.*')
     .replace(/\?/g, '.');
-  
+
   return new RegExp(`^${regexPattern}$`, 'i').test(filename);
 }
 
@@ -578,7 +590,7 @@ function isBinaryFile(filename: string): boolean {
     '.zip', '.tar', '.gz', '.bz2', '.rar', '.7z',
     '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx'
   ];
-  
+
   const ext = path.extname(filename).toLowerCase();
   return binaryExtensions.includes(ext);
 }
@@ -763,6 +775,118 @@ export async function updateTasks(taskUpdates: TaskUpdate[]): Promise<ToolResult
   }
 }
 
+/**
+ * Persist current tasks to a file (json or markdown)
+ */
+export async function saveTasks(filePath: string, format: 'json' | 'md' = 'json'): Promise<ToolResult> {
+  try {
+    if (!currentTaskList) {
+      return createToolResponse(false, undefined, '', 'Error: No task list exists to save');
+    }
+
+    // Default location: .nexus/tasks if filePath not provided
+    if (!filePath || !filePath.trim()) {
+      const defaultDir = path.resolve('.nexus', 'tasks');
+      await fs.promises.mkdir(defaultDir, { recursive: true }).catch(() => {});
+      filePath = path.join(defaultDir, format === 'md' ? 'tasks.md' : 'tasks.json');
+    }
+    const resolvedPath = resolveAtProjectRoot(filePath);
+    const snapshot = getCurrentTaskSnapshot();
+
+    if (format === 'md') {
+      const lines: string[] = [];
+      lines.push(`# Tasks for: ${snapshot!.user_query}`);
+      lines.push('');
+      for (const task of snapshot!.tasks) {
+        const box = task.status === 'completed' ? 'x' : task.status === 'in_progress' ? '-' : ' ';
+        lines.push(`- [${box}] ${task.id}. ${task.description}${task.notes ? ` — ${task.notes}` : ''}`);
+      }
+      await fs.promises.writeFile(resolvedPath, lines.join('\n'), 'utf-8');
+    } else {
+      await fs.promises.writeFile(resolvedPath, JSON.stringify(snapshot, null, 2), 'utf-8');
+    }
+
+    return createToolResponse(true, { path: resolvedPath }, `Saved tasks to ${filePath}`);
+
+  } catch (error) {
+    return createToolResponse(false, undefined, '', `Error: Failed to save tasks - ${error}`);
+  }
+}
+
+/**
+ * Load tasks from a file and replace current task list
+ */
+export async function loadTasks(filePath: string): Promise<ToolResult> {
+  try {
+    // Default location: .nexus/tasks/tasks.json if not provided
+    if (!filePath || !filePath.trim()) {
+      filePath = path.resolve('.nexus', 'tasks', 'tasks.json');
+    }
+    const resolvedPath = resolveAtProjectRoot(filePath);
+    const exists = await fs.promises.access(resolvedPath).then(() => true).catch(() => false);
+    if (!exists) {
+      return createToolResponse(false, undefined, '', 'Error: File not found');
+    }
+
+    const content = await fs.promises.readFile(resolvedPath, 'utf-8');
+
+    // Try JSON first
+    let parsed: any = null;
+    try {
+      parsed = JSON.parse(content);
+    } catch {
+      parsed = null;
+    }
+
+    if (parsed && parsed.user_query && Array.isArray(parsed.tasks)) {
+      currentTaskList = {
+        user_query: String(parsed.user_query),
+        tasks: parsed.tasks.map((t: any) => ({
+          id: String(t.id),
+          description: String(t.description),
+          status: (['pending', 'in_progress', 'completed'] as const).includes(t.status) ? t.status : 'pending',
+          notes: t.notes ? String(t.notes) : undefined,
+          updated_at: t.updated_at ? String(t.updated_at) : undefined,
+        })),
+        created_at: parsed.created_at ? String(parsed.created_at) : new Date().toISOString(),
+      };
+
+      const snapshot = getCurrentTaskSnapshot();
+      return createToolResponse(true, snapshot, `Loaded tasks from ${filePath}`);
+    }
+
+    // Fallback: basic Markdown checklist parse
+    const lines = content.split('\n');
+    const title = lines.find(l => l.startsWith('# '));
+    const userQuery = title ? title.replace(/^#\s+/, '').replace(/^Tasks for:\s*/i, '') : 'Recovered tasks';
+    const tasks: Task[] = [];
+    for (const line of lines) {
+      const m = line.match(/^\s*-\s*\[( |x|-)\]\s*(\S+)\.\s*(.*)$/);
+      if (m) {
+        const mark = m[1];
+        const id = m[2];
+        const desc = m[3];
+        const status = mark === 'x' ? 'completed' : mark === '-' ? 'in_progress' : 'pending';
+        tasks.push({ id, description: desc, status });
+      }
+    }
+
+    if (tasks.length > 0) {
+      currentTaskList = {
+        user_query: userQuery,
+        tasks,
+        created_at: new Date().toISOString(),
+      };
+      const snapshot = getCurrentTaskSnapshot();
+      return createToolResponse(true, snapshot, `Loaded tasks from ${filePath}`);
+    }
+
+    return createToolResponse(false, undefined, '', 'Error: Unsupported task file format');
+
+  } catch (error) {
+    return createToolResponse(false, undefined, '', `Error: Failed to load tasks - ${error}`);
+  }
+}
 // Tool Registry: maps tool names to functions
 export const TOOL_REGISTRY = {
   read_file: readFile,
@@ -774,6 +898,24 @@ export const TOOL_REGISTRY = {
   execute_command: executeCommand,
   create_tasks: createTasks,
   update_tasks: updateTasks,
+  save_tasks: saveTasks,
+  load_tasks: loadTasks,
+  mcp_connect: async (name: string) => {
+    try {
+      await McpManager.instance().connect(name);
+      return createToolResponse(true, undefined, `Connected to MCP server: ${name}`);
+    } catch (e: any) {
+      return createToolResponse(false, undefined, '', `Error: ${e?.message || 'Failed to connect MCP'}`);
+    }
+  },
+  mcp_request: async (name: string, method: string, params?: Record<string, any>) => {
+    try {
+      const result = await McpManager.instance().request(name, method, params);
+      return createToolResponse(true, result, `MCP ${name}.${method} executed`);
+    } catch (e: any) {
+      return createToolResponse(false, undefined, '', `Error: ${e?.message || 'MCP request failed'}`);
+    }
+  },
 };
 
 /**
@@ -786,7 +928,7 @@ export async function executeTool(toolName: string, toolArgs: Record<string, any
 
   try {
     const toolFunction = (TOOL_REGISTRY as any)[toolName];
-    
+
     // Call the function with the appropriate arguments based on the tool
     switch (toolName) {
       case 'read_file':
@@ -819,6 +961,14 @@ export async function executeTool(toolName: string, toolArgs: Record<string, any
         return await toolFunction(toolArgs.user_query, toolArgs.tasks);
       case 'update_tasks':
         return await toolFunction(toolArgs.task_updates);
+      case 'save_tasks':
+        return await toolFunction(toolArgs.file_path, toolArgs.format);
+      case 'load_tasks':
+        return await toolFunction(toolArgs.file_path);
+      case 'mcp_connect':
+        return await toolFunction(toolArgs.name);
+      case 'mcp_request':
+        return await toolFunction(toolArgs.name, toolArgs.method, toolArgs.params);
       default:
         return createToolResponse(false, undefined, '', 'Error: Tool not implemented');
     }

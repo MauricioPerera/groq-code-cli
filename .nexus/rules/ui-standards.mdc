@@ -1,0 +1,9 @@
+---
+description: Estándares UI Nexus
+globs: [src/ui/**]
+alwaysApply: false
+---
+- Reutiliza componentes existentes de src/ui/components y hooks de src/ui/hooks
+- Evita bloquear la TUI; usa estados de isProcessing y overlays cuando corresponda
+- Mantén consistencia visual con los patrones actuales (TokenMetrics, ToolHistoryItem)
+- Prefiere diffs con DiffPreview para cambios de archivos

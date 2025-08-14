@@ -1,0 +1,6 @@
+---
+description: Reglas base del proyecto Nexus
+alwaysApply: true
+---
+- Usa tools para leer antes de editar
+- Prefiere comandos cortos con timeout

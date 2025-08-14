@@ -55,7 +55,7 @@ npm link        # Enables the `groq` command in any directory
 
 ```bash
 # Run this in the background during development to automatically apply any changes to the source code
-npm run dev  
+npm run dev
 ```
 
 ### Run Instantly
@@ -114,6 +114,7 @@ export GROQ_API_KEY=your_api_key_here
 - `/model` - Select your Groq model
 - `/clear` - Clear chat history and context
 - `/reasoning` - Toggle display of reasoning content in messages
+- `/mcp` - Manage MCP servers and inspect discovered tools
 
 
 ## Development
@@ -121,7 +122,7 @@ export GROQ_API_KEY=your_api_key_here
 ### Testing Locally
 ```bash
 # Run this in the background during development to automatically apply any changes to the source code
-npm run dev  
+npm run dev
 ```
 
 ### Available Scripts
@@ -135,41 +136,58 @@ npm run dev        # Build in watch mode
 ```
 groq-code-cli/
 ├── src/
-│   ├── commands/           
+│   ├── commands/
 │   │   ├── definitions/        # Individual command implementations
 │   │   │   ├── clear.ts        # Clear chat history command
 │   │   │   ├── help.ts         # Help command
 │   │   │   ├── login.ts        # Authentication command
+│   │   │   ├── mcp.ts          # MCP helper command (list/connect/tools)
 │   │   │   ├── model.ts        # Model selection command
 │   │   │   └── reasoning.ts    # Reasoning toggle command
 │   │   ├── base.ts             # Base command interface
 │   │   └── index.ts            # Command exports
-│   ├── core/               
+│   ├── core/
 │   │   ├── agent.ts            # AI agent implementation
 │   │   └── cli.ts              # CLI entry point and setup
-│   ├── tools/              
+│   ├── tools/
 │   │   ├── tool-schemas.ts     # Tool schema definitions
 │   │   ├── tools.ts            # Tool implementations
 │   │   └── validators.ts       # Input validation utilities
-│   ├── ui/                 
+│   ├── ui/
 │   │   ├── App.tsx             # Main application component
-│   │   ├── components/     
+│   │   ├── components/
 │   │   │   ├── core/           # Core chat TUI components
 │   │   │   ├── display/        # Auxiliary components for TUI display
 │   │   │   └── input-overlays/ # Input overlays and modals that occupy the MessageInput box
-│   │   └── hooks/          
-│   └── utils/              
+│   │   └── hooks/
+│   └── utils/
 │       ├── constants.ts        # Application constants
 │       ├── file-ops.ts         # File system operations
 │       ├── local-settings.ts   # Local configuration management
 │       └── markdown.ts         # Markdown processing utilities
-├── docs/                   
-├── package.json    
-├── tsconfig.json        
-└── LICENSE          
+├── docs/
+├── package.json
+├── tsconfig.json
+└── LICENSE
 ```
 
 **TL;DR:** Start with `src/core/cli.ts` (main entry point), `src/core/agent.ts`, and `src/ui/hooks/useAgent.ts` (bridge between TUI and the agent). Tools are in `src/tools/`, slash commands are in `src/commands/definitions/`, and customize the TUI in `src/ui/components/`.
+
+### MCP Quickstart
+
+Create `.nexus/mcp.servers.json`:
+
+```
+[
+  { "name": "example", "command": "node", "args": ["./server.js"], "cwd": "." }
+]
+```
+
+Then in the CLI:
+
+- `/mcp list`
+- `/mcp connect example`
+- `/mcp tools` (tools appear as `mcp__example__<tool>` and can be called by the model)
 
 ### Customization
 
