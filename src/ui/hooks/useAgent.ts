@@ -78,10 +78,182 @@ export function useAgent(
       agent.setActiveAgentProfile(agentMatch[1]);
     }
 
+    // Entrada natural para crear reglas sin comando explícito
+    let effectiveInput = userInput;
+    const naturalRule = userInput.match(/^(?:crea|crear|genera|generate)\s+una?\s+regla\s+(?:para\s+)?([\w.-]+)\s*[:\-]?\s*(.+)$/i)
+      || userInput.match(/^@([\w.-]+)\.mdc\s+(.+)$/i);
+    if (naturalRule) {
+      const name = (naturalRule[1] || '').trim();
+      const spec = (naturalRule[2] || '').trim();
+      if (name && spec) {
+        effectiveInput = `/rule-ai ${name} ${spec}`;
+      }
+    } else {
+      // Reglas: actualizar
+      const updateRule = userInput.match(/^(?:actualiza|modifica|edita|update|edit)a?\s+(?:la\s+)?regla\s+([\w.-]+)\s*[:\-]?\s*(.+)$/i);
+      if (updateRule) {
+        const name = updateRule[1].trim();
+        const spec = updateRule[2].trim();
+        effectiveInput = [
+          'You are an assistant that updates Nexus rules located at .nexus/rules/<name>.mdc.',
+          `Target name: ${name}`,
+          `Spec: ${spec}`,
+          'Task:',
+          '- Interpret the spec to produce an improved rule body and any metadata (alwaysApply, globs, agents) if implied.',
+          `- Then call nexus_write_rule with: { name: "${name}", content: <generated_body>, alwaysApply?: <bool>, globs?: <csv>, agents?: <csv> }`,
+          '- Preserve unspecified fields when the rule exists.',
+          'Answer by calling the tool; avoid dumping full content in assistant text.'
+        ].join('\n');
+      }
+
+      // Reglas: eliminar
+      const deleteRule = !updateRule && userInput.match(/^(?:elimina|borra|delete|remove)\s+(?:la\s+)?regla\s+([\w.-]+)\b/i);
+      if (!updateRule && deleteRule) {
+        const name = deleteRule[1].trim();
+        effectiveInput = [
+          'Delete the given Nexus rule file.',
+          `- Call delete_file with { file_path: ".nexus/rules/${name}.mdc" }`,
+          '- Respond by calling the tool.'
+        ].join('\n');
+      }
+
+      // Reglas: listar
+      const listRules = !updateRule && !deleteRule && userInput.match(/^(?:lista|listar|muestra|ver|list|show)\s+reglas\b/i);
+      if (!updateRule && !deleteRule && listRules) {
+        effectiveInput = [
+          'List Nexus rules.',
+          '- Call list_files with { directory: ".nexus/rules", pattern: "*.mdc", recursive: false }',
+          '- Respond by calling the tool.'
+        ].join('\n');
+      }
+
+      // Agentes: crear/actualizar
+      const upsertAgent = !naturalRule && userInput.match(/^(?:crea|crear|genera|generate|actualiza|modifica|edita|update|edit)a?\s+(?:un\s+|una\s+|el\s+|la\s+)?agente\s+([\w.-]+)\s*[:\-]?\s*(.*)$/i);
+      if (upsertAgent) {
+        const name = upsertAgent[1].trim();
+        const spec = (upsertAgent[2] || '').trim();
+        effectiveInput = [
+          'You manage Nexus agents stored at .nexus/agents/<name>.mdc.',
+          `Target name: ${name}`,
+          `Spec: ${spec}`,
+          'Task:',
+          '- Extract fields: description, model, temperature, tools_include, tools_exclude and the system prompt.',
+          `- Then call nexus_write_agent with: { name: "${name}", description?, model?, temperature?, tools_include?, tools_exclude?, system? }`,
+          '- Preserve unspecified fields if agent exists.',
+          'Answer by calling the tool.'
+        ].join('\n');
+      }
+
+      // Agentes: eliminar
+      const deleteAgent = !upsertAgent && userInput.match(/^(?:elimina|borra|delete|remove)\s+(?:el\s+|la\s+)?agente\s+([\w.-]+)\b/i);
+      if (!upsertAgent && deleteAgent) {
+        const name = deleteAgent[1].trim();
+        effectiveInput = [
+          'Delete the given Nexus agent file.',
+          `- Call delete_file with { file_path: ".nexus/agents/${name}.mdc" }`,
+          '- Respond by calling the tool.'
+        ].join('\n');
+      }
+
+      // Agentes: listar
+      const listAgents = !upsertAgent && !deleteAgent && userInput.match(/^(?:lista|listar|muestra|ver|list|show)\s+agentes\b/i);
+      if (!upsertAgent && !deleteAgent && listAgents) {
+        effectiveInput = [
+          'List Nexus agents.',
+          '- Call list_files with { directory: ".nexus/agents", pattern: "*.mdc", recursive: false }',
+          '- Respond by calling the tool.'
+        ].join('\n');
+      }
+
+      // Tareas: crear
+      const createTasksNL = userInput.match(/^(?:crea|crear|genera|generate)\s+tareas?\s*[:\-]?\s*(.+)$/i);
+      if (createTasksNL) {
+        const spec = createTasksNL[1].trim();
+        effectiveInput = [
+          'Create a structured task list for the request.',
+          `User request/spec: ${spec}`,
+          '- Construct an array of tasks with fields: id, description, status (pending|in_progress|completed).',
+          '- Then call create_tasks with { user_query, tasks }.',
+          'Answer by calling the tool.'
+        ].join('\n');
+      }
+
+      // Tareas: actualizar
+      const updateTasksNL = !createTasksNL && userInput.match(/^(?:actualiza|modifica|marca|update)\s+tareas?\s*[:\-]?\s*(.+)$/i);
+      if (!createTasksNL && updateTasksNL) {
+        const spec = updateTasksNL[1].trim();
+        effectiveInput = [
+          'Update tasks statuses and notes.',
+          `Spec: ${spec}`,
+          '- Extract task_updates as an array: { id, status, notes? }.',
+          '- Then call update_tasks with { task_updates }.',
+          'Answer by calling the tool.'
+        ].join('\n');
+      }
+
+      // Tareas: guardar
+      const saveTasksNL = userInput.match(/^(?:guarda|guardar|save)\s+tareas?(?:\s+en\s+(.+))?$/i);
+      if (saveTasksNL) {
+        const fp = (saveTasksNL[1] || '').trim();
+        effectiveInput = [
+          'Persist the current task list.',
+          fp ? `- Call save_tasks with { file_path: "${fp}", format: "json" }` : '- Call save_tasks with defaults (to .nexus/tasks/tasks.json)',
+          '- Respond by calling the tool.'
+        ].join('\n');
+      }
+
+      // Tareas: cargar
+      const loadTasksNL = userInput.match(/^(?:carga|cargar|load)\s+tareas?(?:\s+desde\s+(.+))?$/i);
+      if (loadTasksNL) {
+        const fp = (loadTasksNL[1] || '').trim();
+        effectiveInput = [
+          'Load a task list from disk.',
+          fp ? `- Call load_tasks with { file_path: "${fp}" }` : '- Call load_tasks with defaults (from .nexus/tasks/tasks.json)',
+          '- Respond by calling the tool.'
+        ].join('\n');
+      }
+
+      // MCP: upsert
+      const upsertMcp = userInput.match(/^(?:agrega|agregar|configura|configurar|upsert|set)\s+(?:servidor\s+)?mcp\s+([\w.-]+)\s*[:\-]?\s*(.*)$/i);
+      if (upsertMcp) {
+        const name = upsertMcp[1].trim();
+        const spec = (upsertMcp[2] || '').trim();
+        effectiveInput = [
+          'Configure an MCP server entry in .nexus/mcp.servers.json.',
+          `Name: ${name}`,
+          `Spec: ${spec}`,
+          '- Extract command, args (comma-separated), cwd, env (KEY=VAL,KEY=VAL).',
+          `- Then call nexus_write_mcp_server with { action: "upsert", name: "${name}", command?, args?, cwd?, env? }`,
+          'Answer by calling the tool.'
+        ].join('\n');
+      }
+
+      // MCP: delete
+      const deleteMcp = !upsertMcp && userInput.match(/^(?:elimina|borra|delete|remove)\s+(?:servidor\s+)?mcp\s+([\w.-]+)\b/i);
+      if (!upsertMcp && deleteMcp) {
+        const name = deleteMcp[1].trim();
+        effectiveInput = [
+          'Delete an MCP server entry by name.',
+          `- Call nexus_write_mcp_server with { action: "delete", name: "${name}" }`,
+          '- Respond by calling the tool.'
+        ].join('\n');
+      }
+
+      // MCP: list
+      const listMcp = !upsertMcp && !deleteMcp && userInput.match(/^(?:lista|listar|muestra|ver|list|show)\s+mcp(s| servidores)?\b/i);
+      if (!upsertMcp && !deleteMcp && listMcp) {
+        effectiveInput = [
+          'List configured MCP servers.',
+          '- Call nexus_read_mcp_config with no arguments.',
+          '- Respond by calling the tool.'
+        ].join('\n');
+      }
+    }
+
     // Add user message
     addMessage({
       role: 'user',
-      content: userInput,
+      content: effectiveInput,
     });
 
     setIsProcessing(true);
@@ -233,7 +405,7 @@ export function useAgent(
         },
       });
 
-      await agent.chat(userInput);
+      await agent.chat(effectiveInput);
 
     } catch (error) {
       // Don't show abort errors - user interruption message is already shown

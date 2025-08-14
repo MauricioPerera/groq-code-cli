@@ -2,12 +2,8 @@
 description: Estándares Tools Nexus
 globs: [src/tools/**]
 ---
-- Define schemas en src/tools/tool-schemas.ts y regístralos en ALL_TOOL_SCHEMAS
-- Implementa en src/tools/tools.ts y añade al TOOL_REGISTRY y executeTool
-- Respeta validación read-before-edit (validators.ts); no edites sin leer
-- Limita comandos de execute_command a procesos de corta duración con timeout
-- Evita duplicar lógica; usa utilidades de file-ops (displayTree, writeFile)
-- Implementa en src/tools/tools.ts y añade al TOOL_REGISTRY y executeTool
-- Respeta validación read-before-edit (validators.ts); no edites sin leer
-- Limita comandos de execute_command a procesos de corta duración con timeout
-- Evita duplicar lógica; usa utilidades de file-ops (displayTree, writeFile)
+- Define schemas en `src/tools/tool-schemas.ts` y regístralos en `ALL_TOOL_SCHEMAS`.
+- Implementa en `src/tools/tools.ts` y añade al `TOOL_REGISTRY` y `executeTool`.
+- Respeta validación read-before-edit (`validators.ts`): no edites sin leer.
+- Limita `execute_command` a procesos cortos con timeout.
+- Evita duplicar lógica; usa utilidades de `file-ops` (`displayTree`, `writeFile`).

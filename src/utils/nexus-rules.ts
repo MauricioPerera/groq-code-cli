@@ -7,6 +7,7 @@ export interface NexusRule {
 	description?: string;
 	alwaysApply?: boolean;
 	globs?: string[];
+	agents?: string[];
 	content: string; // body content after frontmatter
 }
 
@@ -14,6 +15,7 @@ interface ParsedMdc {
 	description?: string;
 	alwaysApply?: boolean;
 	globs?: string[];
+	agents?: string[];
 	body: string;
 }
 
@@ -23,6 +25,7 @@ function parseMdc(fileContent: string): ParsedMdc {
 	let description: string | undefined;
 	let alwaysApply: boolean | undefined;
 	let globs: string[] | undefined;
+	let agents: string[] | undefined;
 	let body = fileContent;
 
 	if (fileContent.startsWith('---')) {
@@ -46,11 +49,19 @@ function parseMdc(fileContent: string): ParsedMdc {
 						.filter(Boolean);
 					if (arr.length) globs = arr;
 				}
+				else if (key === 'agents') {
+					const arr = val
+						.replace(/^\[|\]$/g, '')
+						.split(',')
+						.map(s => s.trim())
+						.filter(Boolean);
+					if (arr.length) agents = arr;
+				}
 			}
 		}
 	}
 
-	return { description, alwaysApply, globs, body };
+	return { description, alwaysApply, globs, agents, body };
 }
 
 export function loadProjectRules(): NexusRule[] {
@@ -79,6 +90,7 @@ export function loadProjectRules(): NexusRule[] {
 				description: parsed.description,
 				alwaysApply: parsed.alwaysApply,
 				globs: parsed.globs,
+				agents: parsed.agents,
 				content: parsed.body,
 			});
 		} catch {
@@ -125,6 +137,18 @@ export function getAutoAttachRules(rules: NexusRule[], filePaths: string[]): Nex
 		if (matched) autos.push(rule);
 	}
 	return autos;
+}
+
+export function getAgentAttachRules(rules: NexusRule[], agentName: string): NexusRule[] {
+	if (!agentName) return [];
+	const matches: NexusRule[] = [];
+	for (const rule of rules) {
+		if (!rule.agents || rule.agents.length === 0) continue;
+		const regexes = rule.agents.map(globToRegex);
+		const hit = regexes.some(rx => rx.test(agentName));
+		if (hit) matches.push(rule);
+	}
+	return matches;
 }
 
 

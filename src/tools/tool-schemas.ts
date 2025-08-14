@@ -168,6 +168,115 @@ export const EXECUTE_COMMAND_SCHEMA: ToolSchema = {
   }
 };
 
+// Nexus Agent Tools
+export const NEXUS_READ_AGENT_SCHEMA: ToolSchema = {
+  type: 'function',
+  function: {
+    name: 'nexus_read_agent',
+    description: 'Read a Nexus agent (.nexus/agents/<name>.mdc) and return its structured fields.',
+    parameters: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'Agent name (filename without extension)' }
+      },
+      required: ['name']
+    }
+  }
+};
+
+export const NEXUS_WRITE_AGENT_SCHEMA: ToolSchema = {
+  type: 'function',
+  function: {
+    name: 'nexus_write_agent',
+    description: 'Create or update a Nexus agent with provided fields; merges with existing when present.',
+    parameters: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'Agent name (filename without extension)' },
+        description: { type: 'string' },
+        model: { type: 'string' },
+        temperature: { type: 'number' },
+        tools_include: { type: 'string' },
+        tools_exclude: { type: 'string' },
+        system: { type: 'string', description: 'System prompt (body)' },
+        dry_run: { type: 'boolean', description: 'If true, return preview without writing' }
+      },
+      required: ['name']
+    }
+  }
+};
+
+// Nexus Rule Tools
+export const NEXUS_READ_RULE_SCHEMA: ToolSchema = {
+  type: 'function',
+  function: {
+    name: 'nexus_read_rule',
+    description: 'Read a Nexus rule (.nexus/rules/<name>.mdc) and return its structured fields.',
+    parameters: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'Rule name (filename without extension)' }
+      },
+      required: ['name']
+    }
+  }
+};
+
+export const NEXUS_WRITE_RULE_SCHEMA: ToolSchema = {
+  type: 'function',
+  function: {
+    name: 'nexus_write_rule',
+    description: 'Create or update a Nexus rule with provided fields; merges with existing when present.',
+    parameters: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'Rule name (filename without extension)' },
+        description: { type: 'string' },
+        alwaysApply: { type: 'boolean' },
+        globs: { type: 'string', description: 'Comma-separated globs' },
+        agents: { type: 'string', description: 'Comma-separated agent names or globs' },
+        content: { type: 'string', description: 'Rule body content' },
+        dry_run: { type: 'boolean', description: 'If true, return preview without writing' }
+      },
+      required: ['name']
+    }
+  }
+};
+
+// MCP Config Tools
+export const NEXUS_READ_MCP_CONFIG_SCHEMA: ToolSchema = {
+  type: 'function',
+  function: {
+    name: 'nexus_read_mcp_config',
+    description: 'Read .nexus/mcp.servers.json and return array of servers.',
+    parameters: {
+      type: 'object',
+      properties: {},
+      required: []
+    }
+  }
+};
+
+export const NEXUS_WRITE_MCP_SERVER_SCHEMA: ToolSchema = {
+  type: 'function',
+  function: {
+    name: 'nexus_write_mcp_server',
+    description: 'Upsert or delete an MCP server entry in .nexus/mcp.servers.json.',
+    parameters: {
+      type: 'object',
+      properties: {
+        action: { type: 'string', enum: ['upsert', 'delete'] },
+        name: { type: 'string' },
+        command: { type: 'string' },
+        args: { type: 'string', description: 'Comma-separated args' },
+        cwd: { type: 'string' },
+        env: { type: 'string', description: 'KEY=VAL pairs comma-separated' },
+        dry_run: { type: 'boolean', description: 'If true, return preview without writing' }
+      },
+      required: ['action', 'name']
+    }
+  }
+};
 // MCP Tools
 export const MCP_CONNECT_SCHEMA: ToolSchema = {
   type: 'function',
@@ -448,6 +557,12 @@ export const ALL_TOOL_SCHEMAS = [
   LOAD_TASKS_SCHEMA,
   MCP_CONNECT_SCHEMA,
   MCP_REQUEST_SCHEMA,
+  NEXUS_READ_AGENT_SCHEMA,
+  NEXUS_WRITE_AGENT_SCHEMA,
+  NEXUS_READ_RULE_SCHEMA,
+  NEXUS_WRITE_RULE_SCHEMA,
+  NEXUS_READ_MCP_CONFIG_SCHEMA,
+  NEXUS_WRITE_MCP_SERVER_SCHEMA,
   EXECUTE_COMMAND_SCHEMA
 ];
 
@@ -468,6 +583,9 @@ export const APPROVAL_REQUIRED_TOOLS = [
   'edit_file',
   // Writing tasks to disk should be approved by the user
   'save_tasks',
+  'nexus_write_agent',
+  'nexus_write_rule',
+  'nexus_write_mcp_server',
 ];
 
 // Dangerous tools that always require approval

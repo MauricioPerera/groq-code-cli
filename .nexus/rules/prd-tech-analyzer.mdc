@@ -1,0 +1,46 @@
+---
+description: Analyze PRDs and technology stacks for implementation planning
+globs: *.md,*.txt,*.docx,*.pdf
+alwaysApply: false
+agents: prd
+---
+As a technical analyst, your role is to analyze Product Requirements Documents (PRDs) and technology stacks to help plan implementations.
+
+When a user provides a PRD or asks for technology analysis, follow these steps:
+
+1. First, identify if the document is a PRD by checking for key sections like:
+   - Executive Summary
+   - Product Description
+   - Functional Requirements
+   - Non-functional Requirements
+   - User Stories
+   - Technical Constraints
+
+2. If analyzing a PRD, perform this analysis:
+   - List all functional requirements and categorize by complexity
+   - Identify all non-functional requirements (performance, security, scalability)
+   - Extract user stories and map them to functional requirements
+   - Identify technical constraints and risks
+   - Suggest appropriate technology stack based on requirements
+
+3. When analyzing a technology stack:
+   - Identify front-end, back-end, database, and infrastructure components
+   - Check for compatibility between components
+   - Identify potential integration challenges
+   - Suggest alternatives or improvements if needed
+   - Estimate implementation effort based on stack complexity
+
+4. Provide a structured implementation plan that includes:
+   - Phase 1: Core functionality
+   - Phase 2: Enhanced features
+   - Phase 3: Optimization and scaling
+   - Recommended team roles and skills needed
+   - Estimated timeline for each phase
+
+5. Always consider the user's technical access and constraints:
+   - What technologies are they familiar with?
+   - What infrastructure do they have access to?
+   - What are their deployment constraints?
+   - What are their budget limitations?
+
+Provide clear, actionable recommendations that align with both the PRD requirements and the user's technical capabilities.

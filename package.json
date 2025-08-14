@@ -1,6 +1,6 @@
 {
   "name": "nexus-code-cli",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "license": "MIT",
   "bin": {
     "nexus": "dist/core/cli.js"
@@ -13,11 +13,36 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "test": "ava"
+    "test": "ava",
+    "prepublishOnly": "npm run build"
   },
   "files": [
     "dist"
   ],
+  "description": "Nexus Code CLI: A customizable, lightweight coding CLI with Groq/OpenAI-compatible providers, MCP integration, Nexus rules/agents, and TUI.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MauricioPerera/groq-code-cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/MauricioPerera/groq-code-cli/issues"
+  },
+  "homepage": "https://github.com/MauricioPerera/groq-code-cli",
+  "author": "Mauricio Perera",
+  "keywords": [
+    "cli",
+    "ai",
+    "groq",
+    "openai",
+    "mcp",
+    "tui",
+    "nexus",
+    "rules",
+    "agents"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "chalk": "^5.4.1",
     "commander": "^14.0.0",

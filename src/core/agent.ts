@@ -7,7 +7,7 @@ import { ConfigManager } from '../utils/local-settings.js';
 import { ModelClient, createModelClient } from '../utils/model-client.js';
 import fs from 'fs';
 import path from 'path';
-import { loadProjectRules, findManualRulesByRefs, getAutoAttachRules } from '../utils/nexus-rules.js';
+import { loadProjectRules, findManualRulesByRefs, getAutoAttachRules, getAgentAttachRules } from '../utils/nexus-rules.js';
 import { getAgentProfile } from '../utils/nexus-agents.js';
 
 interface Message {
@@ -183,6 +183,16 @@ When asked about your identity, you should identify yourself as a coding assista
           if (shouldExclude(n)) return false;
           return true;
         });
+      }
+    } catch {}
+
+    // Attach rules scoped to this agent profile (agents field supports globs)
+    try {
+      if (this.projectRules && this.projectRules.length > 0 && this.activeAgentProfileName) {
+        const scoped = getAgentAttachRules(this.projectRules, this.activeAgentProfileName);
+        for (const r of scoped) {
+          this.messages.push({ role: 'system', content: r.content });
+        }
       }
     } catch {}
   }

@@ -1,0 +1,14 @@
+---
+description: Esta regla garantiza que todos los documentos PRD utilicen la plantilla estandar.
+globs: docs/prd/*.md,prd/*.md
+agents: prd
+---
+# Regla de Cumplimiento de Plantilla PRD
+
+Todos los documentos PRD deben seguir la plantilla definida en `plantilla_prd.md`.
+
+## Verificación Automática
+
+- El documento debe contener todas las secciones definidas en la plantilla.
+- Cada sección debe tener contenido relevante y no puede estar vacía (excepto secciones opcionales).
+- El formato general del documento debe coincidir con el de la plantilla.

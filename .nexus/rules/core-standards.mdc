@@ -1,0 +1,10 @@
+---
+description: Estándares nucleares de Nexus para calidad y seguridad
+alwaysApply: true
+---
+- Lee archivos con `read_file` antes de usar `edit_file`.
+- No ejecutes comandos de larga duración con `execute_command`.
+- Prefiere cambios pequeños y atómicos; evita ediciones masivas.
+- Mantén consistencia de estilo y respeta validaciones.
+- Usa rutas relativas al root del proyecto.
+

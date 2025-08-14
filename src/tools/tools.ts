@@ -1,9 +1,9 @@
 import * as fs from 'fs';
-import * as path from 'path';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { writeFile, createDirectory, displayTree } from '../utils/file-ops.js';
 import { McpManager } from '../utils/mcp.js';
+import * as path from 'path';
 import { resolveAtProjectRoot } from '../utils/project-root.js';
 import { setReadFilesTracker } from './validators.js';
 
@@ -887,6 +887,147 @@ export async function loadTasks(filePath: string): Promise<ToolResult> {
     return createToolResponse(false, undefined, '', `Error: Failed to load tasks - ${error}`);
   }
 }
+
+// --- Nexus agent helpers ---
+function parseAgentMdc(content: string): { header: Record<string,string>, body: string } {
+  let body = content;
+  const header: Record<string,string> = {};
+  if (content.startsWith('---')) {
+    const end = content.indexOf('\n---', 3);
+    if (end !== -1) {
+      const raw = content.slice(3, end).trim();
+      body = content.slice(end + 4).replace(/^\s*\n/, '');
+      for (const line of raw.split(/\r?\n/)) {
+        const m = line.match(/^([a-zA-Z_]+):\s*(.*)$/);
+        if (!m) continue;
+        header[m[1].trim()] = m[2].trim();
+      }
+    }
+  }
+  return { header, body };
+}
+
+function buildAgentMdc(fields: { description?: string; model?: string; temperature?: number; tools_include?: string; tools_exclude?: string; system?: string }): string {
+  const lines: string[] = ['---'];
+  if (fields.description !== undefined) lines.push(`description: ${fields.description}`);
+  if (fields.model !== undefined) lines.push(`model: ${fields.model}`);
+  if (fields.temperature !== undefined) lines.push(`temperature: ${fields.temperature}`);
+  if (fields.tools_include !== undefined) lines.push(`tools_include: ${fields.tools_include}`);
+  if (fields.tools_exclude !== undefined) lines.push(`tools_exclude: ${fields.tools_exclude}`);
+  lines.push('---');
+  lines.push(fields.system ?? '');
+  return lines.join('\n');
+}
+
+function parseRuleMdc(content: string): { header: Record<string,string>, body: string } {
+  let body = content;
+  const header: Record<string,string> = {};
+  if (content.startsWith('---')) {
+    const end = content.indexOf('\n---', 3);
+    if (end !== -1) {
+      const raw = content.slice(3, end).trim();
+      body = content.slice(end + 4).replace(/^\s*\n/, '');
+      for (const line of raw.split(/\r?\n/)) {
+        const m = line.match(/^([a-zA-Z_]+):\s*(.*)$/);
+        if (!m) continue;
+        header[m[1].trim()] = m[2].trim();
+      }
+    }
+  }
+  return { header, body };
+}
+
+function buildRuleMdc(fields: { description?: string; alwaysApply?: boolean; globs?: string; agents?: string; content?: string }): string {
+  const lines: string[] = ['---'];
+  if (fields.description !== undefined) lines.push(`description: ${fields.description}`);
+  if (fields.alwaysApply !== undefined) lines.push(`alwaysApply: ${fields.alwaysApply}`);
+  if (fields.globs !== undefined) lines.push(`globs: ${fields.globs}`);
+  if (fields.agents !== undefined) lines.push(`agents: ${fields.agents}`);
+  lines.push('---');
+  lines.push(fields.content ?? '');
+  return lines.join('\n');
+}
+
+function parseEnvPairs(text?: string): Record<string,string> | undefined {
+  if (!text) return undefined;
+  const obj: Record<string,string> = {};
+  for (const kv of text.split(',')) {
+    const [k,...rest] = kv.split('=');
+    if (!k) continue;
+    obj[k.trim()] = rest.join('=').trim();
+  }
+  return obj;
+}
+
+export async function nexusReadRule(name: string): Promise<ToolResult> {
+  try {
+    const file = path.resolve('.nexus', 'rules', `${name}.mdc`);
+    const exists = await fs.promises.access(file).then(()=>true).catch(()=>false);
+    if (!exists) return createToolResponse(false, undefined, '', 'Error: Rule not found');
+    const content = await fs.promises.readFile(file, 'utf8');
+    const parsed = parseRuleMdc(content);
+    const data = { name, ...parsed.header, content: parsed.body };
+    return createToolResponse(true, data, `Read rule ${name}`);
+  } catch {
+    return createToolResponse(false, undefined, '', 'Error: Failed to read rule');
+  }
+}
+
+export async function nexusWriteRule(name: string, fields: { description?: string; alwaysApply?: boolean; globs?: string; agents?: string; content?: string; dry_run?: boolean }): Promise<ToolResult> {
+  try {
+    const file = path.resolve('.nexus', 'rules', `${name}.mdc`);
+    const exists = await fs.promises.access(file).then(()=>true).catch(()=>false);
+    let merged = { ...fields } as any;
+    if (exists) {
+      const content = await fs.promises.readFile(file, 'utf8');
+      const parsed = parseRuleMdc(content);
+      merged = { description: parsed.header.description, alwaysApply: /true/i.test(parsed.header.alwaysApply||''), globs: parsed.header.globs, agents: (parsed.header as any).agents, content: parsed.body };
+      for (const k of Object.keys(fields)) (merged as any)[k] = (fields as any)[k];
+    }
+    const mdc = buildRuleMdc(merged);
+    if (fields.dry_run) return createToolResponse(true, { preview: mdc }, 'Dry run');
+    await fs.promises.mkdir(path.dirname(file), { recursive: true });
+    await fs.promises.writeFile(file, mdc, 'utf8');
+    return createToolResponse(true, { path: file }, `Wrote rule ${name}`);
+  } catch {
+    return createToolResponse(false, undefined, '', 'Error: Failed to write rule');
+  }
+}
+
+export async function nexusReadMcpConfig(): Promise<ToolResult> {
+  try {
+    const file = path.resolve('.nexus', 'mcp.servers.json');
+    const exists = await fs.promises.access(file).then(()=>true).catch(()=>false);
+    if (!exists) return createToolResponse(true, [], 'No config found');
+    const content = await fs.promises.readFile(file, 'utf8');
+    const arr = JSON.parse(content);
+    return createToolResponse(true, arr, 'Read MCP config');
+  } catch {
+    return createToolResponse(false, undefined, '', 'Error: Failed to read MCP config');
+  }
+}
+
+export async function nexusWriteMcpServer(action: 'upsert'|'delete', server: { name: string; command?: string; args?: string; cwd?: string; env?: string; dry_run?: boolean }): Promise<ToolResult> {
+  try {
+    const file = path.resolve('.nexus', 'mcp.servers.json');
+    const exists = await fs.promises.access(file).then(()=>true).catch(()=>false);
+    let arr: any[] = exists ? JSON.parse(await fs.promises.readFile(file,'utf8')) : [];
+    if (!Array.isArray(arr)) arr = [];
+    if (action === 'delete') {
+      arr = arr.filter((s: any) => s.name !== server.name);
+    } else {
+      const idx = arr.findIndex((s:any)=> s.name===server.name);
+      const obj = { name: server.name, command: server.command||'node', args: server.args? server.args.split(',').map(s=>s.trim()): [], cwd: server.cwd||'.', env: parseEnvPairs(server.env) };
+      if (idx>=0) arr[idx]=obj; else arr.push(obj);
+    }
+    if (server.dry_run) return createToolResponse(true, arr, 'Dry run');
+    await fs.promises.mkdir(path.dirname(file), { recursive: true });
+    await fs.promises.writeFile(file, JSON.stringify(arr,null,2),'utf8');
+    return createToolResponse(true, { path: file }, 'Wrote MCP config');
+  } catch {
+    return createToolResponse(false, undefined, '', 'Error: Failed to write MCP config');
+  }
+}
 // Tool Registry: maps tool names to functions
 export const TOOL_REGISTRY = {
   read_file: readFile,
@@ -916,6 +1057,48 @@ export const TOOL_REGISTRY = {
       return createToolResponse(false, undefined, '', `Error: ${e?.message || 'MCP request failed'}`);
     }
   },
+  nexus_read_agent: async (name: string): Promise<ToolResult> => {
+    try {
+      const file = path.resolve('.nexus', 'agents', `${name}.mdc`);
+      const exists = await fs.promises.access(file).then(()=>true).catch(()=>false);
+      if (!exists) return createToolResponse(false, undefined, '', 'Error: Agent not found');
+      const content = await fs.promises.readFile(file, 'utf8');
+      const parsed = parseAgentMdc(content);
+      const data = { name, ...parsed.header, system: parsed.body };
+      return createToolResponse(true, data, `Read agent ${name}`);
+    } catch (e) {
+      return createToolResponse(false, undefined, '', 'Error: Failed to read agent');
+    }
+  },
+  nexus_write_agent: async (
+    name: string,
+    fields: { description?: string; model?: string; temperature?: number; tools_include?: string; tools_exclude?: string; system?: string }
+  ): Promise<ToolResult> => {
+    try {
+      const file = path.resolve('.nexus', 'agents', `${name}.mdc`);
+      const exists = await fs.promises.access(file).then(()=>true).catch(()=>false);
+      let merged = { ...fields } as any;
+      if (exists) {
+        const content = await fs.promises.readFile(file, 'utf8');
+        const parsed = parseAgentMdc(content);
+        merged = { ...parsed.header };
+        if (parsed.body && !fields.system) merged.system = parsed.body;
+        for (const k of Object.keys(fields)) {
+          (merged as any)[k] = (fields as any)[k];
+        }
+      }
+      const mdc = buildAgentMdc(merged);
+      await fs.promises.mkdir(path.dirname(file), { recursive: true });
+      await fs.promises.writeFile(file, mdc, 'utf8');
+      return createToolResponse(true, { path: file }, `Wrote agent ${name}`);
+    } catch (e) {
+      return createToolResponse(false, undefined, '', 'Error: Failed to write agent');
+    }
+  },
+  nexus_read_rule: nexusReadRule,
+  nexus_write_rule: nexusWriteRule,
+  nexus_read_mcp_config: nexusReadMcpConfig,
+  nexus_write_mcp_server: nexusWriteMcpServer,
 };
 
 /**
@@ -969,6 +1152,39 @@ export async function executeTool(toolName: string, toolArgs: Record<string, any
         return await toolFunction(toolArgs.name);
       case 'mcp_request':
         return await toolFunction(toolArgs.name, toolArgs.method, toolArgs.params);
+      case 'nexus_read_agent':
+        return await toolFunction(toolArgs.name);
+      case 'nexus_write_agent':
+        return await toolFunction(toolArgs.name, {
+          description: toolArgs.description,
+          model: toolArgs.model,
+          temperature: toolArgs.temperature,
+          tools_include: toolArgs.tools_include,
+          tools_exclude: toolArgs.tools_exclude,
+          system: toolArgs.system,
+        });
+      case 'nexus_read_rule':
+        return await toolFunction(toolArgs.name);
+      case 'nexus_write_rule':
+        return await toolFunction(toolArgs.name, {
+          description: toolArgs.description,
+          alwaysApply: toolArgs.alwaysApply,
+          globs: toolArgs.globs,
+          agents: toolArgs.agents,
+          content: toolArgs.content,
+          dry_run: toolArgs.dry_run,
+        });
+      case 'nexus_read_mcp_config':
+        return await toolFunction();
+      case 'nexus_write_mcp_server':
+        return await toolFunction(toolArgs.action, {
+          name: toolArgs.name,
+          command: toolArgs.command,
+          args: toolArgs.args,
+          cwd: toolArgs.cwd,
+          env: toolArgs.env,
+          dry_run: toolArgs.dry_run,
+        });
       default:
         return createToolResponse(false, undefined, '', 'Error: Tool not implemented');
     }

@@ -10,6 +10,7 @@ export interface CommandContext {
   toggleReasoning?: () => void;
   showReasoning?: boolean;
   setLanguage?: (lang: 'es' | 'en') => void;
+  agent?: any;
 }
 
 export interface CommandDefinition {

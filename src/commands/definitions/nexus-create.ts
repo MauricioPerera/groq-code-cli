@@ -65,13 +65,15 @@ export const createRuleCommand: CommandDefinition = {
     const parts = input.trim().split(/\s+/);
     const name = parts[1];
     const kind = parts[2] || 'manual';
+    const rest = parts.slice(kind === 'manual' ? 2 : 3).join(' ').trim();
     if (!name) {
       addMessage({ role: 'system', content: 'Uso: /create-rule <nombre> [always|auto]' });
       return;
     }
     const file = path.resolve('.nexus', 'rules', `${name}.mdc`);
     const header = kind === 'always' ? 'alwaysApply: true' : kind === 'auto' ? 'globs: [src/**]' : '';
-    const tmpl = `---\ndescription: Regla ${name}\n${header}\n---\nInstrucciones de la regla ${name}.\n`;
+    const body = rest ? rest : `Instrucciones de la regla ${name}.`;
+    const tmpl = `---\ndescription: Regla ${name}\n${header}\n---\n${body}\n`;
     const res = writeIfNotExists(file, tmpl);
     if (res.ok) addMessage({ role: 'assistant', content: `Regla creada: .nexus/rules/${name}.mdc` });
     else addMessage({ role: 'assistant', content: `Ya existe: .nexus/rules/${name}.mdc` });

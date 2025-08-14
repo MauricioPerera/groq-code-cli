@@ -19,7 +19,8 @@
  <a href="#Overview">Overview</a> •
  <a href="#Installation">Installation</a> •
  <a href="#Usage">Usage</a> •
- <a href="#Development">Development</a>
+  <a href="#Development">Development</a> •
+  <a href="docs/es/nexus.md">Nexus (.nexus & Natural Language)</a>
 </p>
 
 <br>
@@ -60,13 +61,14 @@ npm run dev
 
 ### Run Instantly
 ```bash
-# Using npx, no installation required
- npx nexus-code-cli@latest
+# Using npx, no installation required (once published)
+npx nexus-code-cli@latest
 ```
 
 ### Install Globally
 ```bash
- npm install -g nexus-code-cli@latest
+# Once published to npm
+npm install -g nexus-code-cli@latest
 ```
 
 ## Usage

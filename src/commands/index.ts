@@ -11,6 +11,8 @@ import { tasksCommand } from './definitions/tasks.js';
 import { createAgentCommand, deleteAgentCommand, createRuleCommand, deleteRuleCommand } from './definitions/nexus-create.js';
 import { statusCommand } from './definitions/status.js';
 import { languageCommand } from './definitions/language.js';
+import { ruleAiCommand } from './definitions/rule-ai.js';
+import { prdAnalyzeCommand } from './definitions/prd-analyze.js';
 
 const availableCommands: CommandDefinition[] = [
   helpCommand,
@@ -28,6 +30,8 @@ const availableCommands: CommandDefinition[] = [
   deleteRuleCommand,
   statusCommand,
   languageCommand,
+  ruleAiCommand,
+  prdAnalyzeCommand,
 ];
 
 export function getAvailableCommands(): CommandDefinition[] {

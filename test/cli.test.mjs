@@ -13,5 +13,5 @@ function loadPkg() {
 
 test('bin entry exists', t => {
   const pkg = loadPkg();
-  t.truthy(pkg.bin && pkg.bin.groq);
+  t.truthy(pkg.bin && (pkg.bin.nexus || pkg.bin.groq));
 });
