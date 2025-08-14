@@ -84,4 +84,70 @@ Internamente, el mensaje se reescribe a instrucciones para que el modelo llame a
 - Usa `agents` para scoping por agente y `globs` para scoping por archivos.
 - Habilita auto-aprobación solo si confías en las operaciones.
 
+## Ejemplos por agente
+
+### reviewer
+
+Regla scoped al agente:
+```
+---
+description: Guías de revisión de PRDs
+agents: reviewer
+---
+Al revisar PRDs, verifica: objetivos claros, dependencias, riesgos, KPIs...
+```
+
+Activar y usar:
+- `@agent:reviewer`
+- “analiza este PRD y señala riesgos técnicos y vacíos de información”
+
+### implementer
+
+Regla scoped al agente:
+```
+---
+description: Convenciones de implementación
+agents: implementer
+globs: src/**
+---
+- Cambios atómicos, ediciones mínimas; conserva estilo.
+- Lee antes de editar; evita refactors amplios sin tests.
+```
+
+Activar y usar:
+- `@agent:implementer`
+- “crea el comando /agent-ai para generar agentes desde especificaciones”
+
+## Cheat‑sheet de frases (NL)
+
+- Reglas
+  - Crear: “crea una regla audit-log: globs src/**; agents reviewer; contenido: …”
+  - Editar: “actualiza la regla audit-log: alwaysApply=true; añade sección de redacción…”
+  - Borrar: “elimina la regla audit-log”
+  - Listar: “lista reglas”
+  - Adjuntar manual: “@audit-log.mdc …”
+
+- Agentes
+  - Crear: “crea agente builder: model=llama-3.1-70b, temp=0.2, tools_include=mcp__*__*,read_file; prompt=…”
+  - Editar: “actualiza el agente builder: excluye execute_command y baja temp a 0.1”
+  - Borrar: “elimina el agente builder”
+  - Listar: “lista agentes”
+  - Activar: “@agent:builder”
+
+- Tareas
+  - Crear: “crea tareas: integrar MCP, exponer tools dinámicas, pruebas AVA”
+  - Actualizar: “actualiza tareas: 1=in_progress, 2=completed con nota ‘ok’”
+  - Guardar: “guarda tareas en .nexus/tasks/mcp.json”
+  - Cargar: “carga tareas desde .nexus/tasks/mcp.json”
+
+- MCP
+  - Configurar: “configura mcp example: command=node, args=server.js, cwd=./mcp, env=PORT=3030”
+  - Eliminar: “elimina mcp example”
+  - Listar: “lista mcp”
+
+## Notas de seguridad
+
+- Operaciones destructivas (p. ej., borrar archivos) requieren aprobación.
+- Para `execute_command`, usa solo comandos de corta duración con timeout.
+
 
