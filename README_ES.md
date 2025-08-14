@@ -110,6 +110,16 @@ Estructura completa en `README.md` y ampliada en `docs/es/desarrollo.md`.
 - Herramientas peligrosas o sensibles requieren aprobación explícita; puedes activar auto-aprobación de sesión para herramientas no peligrosas
 - `execute_command` solo para comandos de corta duración (con timeout); evita procesos que queden corriendo
 
+## Nexus (.nexus) y Lenguaje Natural
+- Guía completa: `docs/es/nexus.md`
+- Reglas (`.nexus/rules/*.mdc`): frontmatter con `description`, `alwaysApply`, `globs`, `agents`; cuerpo con instrucciones.
+- Agentes (`.nexus/agents/*.mdc`): frontmatter con `description`, `model`, `temperature`, `tools_include`, `tools_exclude`; cuerpo como system prompt.
+- CRUD por lenguaje natural (ejemplos):
+  - Reglas: “crea una regla PRD: agents prd, globs docs/**/*.md; contenido: …”, “actualiza la regla PRD: alwaysApply=true; …”, “elimina la regla PRD”, “lista reglas”.
+  - Agentes: “crea agente reviewer: model=…, temp=0.2, tools_include=mcp__*__*, prompt=…”, “elimina el agente reviewer”, “lista agentes”, activar con `@agent:reviewer`.
+  - Tareas: “crea tareas: …”, “actualiza tareas: 1=completed…”, “guarda tareas en .nexus/tasks/x.json”, “carga tareas desde …”.
+  - MCP: “configura mcp ejemplo: command=node, args=server.js, cwd=./mcp, env=PORT=3001”, “elimina mcp ejemplo”, “lista mcp”.
+
 ## Solución de problemas
 Casos comunes en `docs/es/solucion-de-problemas.md`:
 - 401/clave inválida → verifica `/login` o `GROQ_API_KEY`
