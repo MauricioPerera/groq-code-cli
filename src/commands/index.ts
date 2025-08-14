@@ -8,6 +8,7 @@ import { agentCommand } from './definitions/agent.js';
 import { rulesCommand } from './definitions/rules.js';
 import { mcpCommand } from './definitions/mcp.js';
 import { tasksCommand } from './definitions/tasks.js';
+import { createAgentCommand, deleteAgentCommand, createRuleCommand, deleteRuleCommand } from './definitions/nexus-create.js';
 
 const availableCommands: CommandDefinition[] = [
   helpCommand,
@@ -19,6 +20,10 @@ const availableCommands: CommandDefinition[] = [
   rulesCommand,
   mcpCommand,
   tasksCommand,
+  createAgentCommand,
+  deleteAgentCommand,
+  createRuleCommand,
+  deleteRuleCommand,
 ];
 
 export function getAvailableCommands(): CommandDefinition[] {

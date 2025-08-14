@@ -111,7 +111,7 @@ export default function Chat({ agent }: ChatProps) {
 
       // Handle slash commands
       if (message.startsWith('/')) {
-        handleSlashCommand(message, {
+        const ctx: any = {
           addMessage,
           clearHistory,
           setShowLogin,
@@ -122,7 +122,10 @@ export default function Chat({ agent }: ChatProps) {
           setShowMcpManager,
           toggleReasoning,
           showReasoning,
-        } as any);
+        };
+        // helper to allow commands to read last user input
+        (ctx.addMessage as any).lastUserInput = () => message;
+        handleSlashCommand(message, ctx);
         return;
       }
 
